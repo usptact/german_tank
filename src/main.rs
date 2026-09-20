@@ -8,7 +8,7 @@
 //!
 //! ```text
 //! N   ~ DiscreteUniform(max(y), 10_000)
-//! λ   ~ HalfNormal(σ = 10)          // |Normal(0, 10)| in Fugue
+//! λ   ~ Gamma(1, 1)                 // positive-support prior (log-space MH)
 //! K   ~ Poisson(N · λ)              // observed capture count
 //! yᵢ  ~ DiscreteUniform(1, N)       // observed serial numbers
 //! ```
@@ -19,7 +19,6 @@
 //! echo '364 925 822 403 282 877 59 441' | cargo run --release
 //! ```
 
-use fugue::inference::diagnostics::extract_i64_values;
 use fugue::inference::mh::adaptive_mcmc_chain;
 use fugue::*;
 use rand::SeedableRng;
@@ -29,16 +28,17 @@ use std::process::ExitCode;
 
 /// Upper bound on the prior for `N`.
 const N_PRIOR_UPPER: i64 = 10_000;
-/// HalfNormal scale for the capture-rate prior (`λ ~ HalfNormal(sd=10)`).
-const LAM_SD: f64 = 10.0;
+/// Shape of the Gamma prior on the capture rate `λ`.
+const LAM_SHAPE: f64 = 1.0;
+/// Rate of the Gamma prior on the capture rate `λ` (mean = shape/rate = 1).
+const LAM_RATE: f64 = 1.0;
 const N_SAMPLES: usize = 20_000;
 const N_WARMUP: usize = 5_000;
 const SEED: u64 = 42;
 
-fn german_tank_model(y: &[i64]) -> Model<(i64, f64)> {
-    let max_y = *y.iter().max().expect("at least one observation");
+fn german_tank_model(y: Vec<i64>) -> Model<(i64, f64)> {
+    let max_y = y.iter().copied().max().expect("at least one observation");
     let k = y.len() as u64;
-    let y = y.to_vec();
 
     prob!(
         let n <- sample(
@@ -46,14 +46,13 @@ fn german_tank_model(y: &[i64]) -> Model<(i64, f64)> {
             DiscreteUniform::new(max_y, N_PRIOR_UPPER).unwrap()
         );
 
-        // HalfNormal(sd): |Z| for Z ~ Normal(0, sd). Fugue has no HalfNormal;
-        // the absolute value of a zero-mean Normal is distributionally identical.
-        let lam_raw <- sample(addr!("lam"), Normal::new(0.0, LAM_SD).unwrap());
-        let lam = lam_raw.abs().max(1e-12);
+        // Positive-support prior so MH proposes in log space (Fugue idiom for
+        // scale / rate parameters; preferred over Normal + abs).
+        let lam <- sample(addr!("lam"), Gamma::new(LAM_SHAPE, LAM_RATE).unwrap());
 
-        observe(addr!("nobs"), Poisson::new(n as f64 * lam).unwrap(), k);
+        observe(addr!("K"), Poisson::new(n as f64 * lam).unwrap(), k);
 
-        let _serials <- plate!(i in 0..y.len() => {
+        let _ <- plate!(i in 0..y.len() => {
             observe(
                 addr!("y", i),
                 DiscreteUniform::new(1, n).unwrap(),
@@ -157,16 +156,14 @@ fn main() -> ExitCode {
     let mvue = (max_y as f64) * (1.0 + 1.0 / k as f64) - 1.0;
 
     let mut rng = StdRng::seed_from_u64(SEED);
-    let y_owned = y.clone();
     let samples = adaptive_mcmc_chain(
         &mut rng,
-        move || german_tank_model(&y_owned),
+        move || german_tank_model(y.clone()),
         N_SAMPLES,
         N_WARMUP,
     );
 
-    let traces: Vec<Trace> = samples.iter().map(|(_, t)| t.clone()).collect();
-    let n_samples: Vec<i64> = extract_i64_values(&traces, &addr!("N"));
+    let n_samples: Vec<i64> = samples.iter().map(|((n, _), _)| *n).collect();
     let lam_samples: Vec<f64> = samples.iter().map(|((_, lam), _)| *lam).collect();
 
     if n_samples.is_empty() || lam_samples.is_empty() {

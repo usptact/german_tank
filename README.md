@@ -8,7 +8,7 @@ Observed tank serial numbers are read from stdin; posterior summaries for the to
 
 ```text
 N   ~ DiscreteUniform(max(y), 10_000)
-λ   ~ HalfNormal(σ = 10)          # |Normal(0, 10)| in Fugue
+λ   ~ Gamma(1, 1)                 # positive-support prior (log-space MH)
 K   ~ Poisson(N · λ)              # observed capture count
 yᵢ  ~ DiscreteUniform(1, N)       # observed serial numbers
 ```
@@ -48,8 +48,8 @@ max_y=981
 mvue=1029.0
 samples=20000
 warmup=5000
-N_mean=1033.9 N_sd=56.4 N_median=1016 N_ci95=[982, 1192]
-lam_mean=0.020230 lam_sd=0.004547 lam_median=0.019842 lam_ci95=[0.012314, 0.029992]
+N_mean=1036.1 N_sd=60.6 N_median=1018 N_ci95=[982, 1199]
+lam_mean=0.020253 lam_sd=0.004552 lam_median=0.019925 lam_ci95=[0.012422, 0.029919]
 ```
 
 Invalid or empty input prints an error on stderr and exits with status `1`.
