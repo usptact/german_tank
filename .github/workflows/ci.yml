@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Format
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets -- -D warnings
+
+      - name: Build
+        run: cargo build --release
+
+      - name: Smoke test (stdin serials)
+        run: |
+          printf '364 925 822 403 282 877 59 441 133 595 351 585 385 864 981 632 276 194 798 127' \
+            | ./target/release/german_tank | tee /tmp/out.txt
+          grep -q '^N_mean=' /tmp/out.txt
+          grep -q '^lam_mean=' /tmp/out.txt

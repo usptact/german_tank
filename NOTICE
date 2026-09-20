@@ -1,0 +1,15 @@
+Third-Party Acknowledgments
+===========================
+
+This software uses the following third-party project:
+
+Fugue (fugue-ppl)
+  Author:  Alex Nodeland
+  Website: https://fugue.run
+  Source:  https://github.com/alexnodeland/fugue
+  Crate:   https://crates.io/crates/fugue-ppl
+  License: MIT (see the Fugue repository for the authoritative text)
+
+Fugue is a type-safe, monadic probabilistic programming library for Rust.
+The German tank inference in this repository is implemented with Fugue’s
+model DSL and adaptive Metropolis–Hastings sampler.

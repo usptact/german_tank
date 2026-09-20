@@ -1,0 +1,14 @@
+[package]
+name = "german_tank"
+version = "0.1.0"
+edition = "2024"
+description = "Bayesian German tank problem inference using the Fugue probabilistic programming library"
+license = "MIT"
+readme = "README.md"
+keywords = ["bayesian", "mcmc", "probabilistic-programming", "fugue", "german-tank"]
+categories = ["science", "mathematics", "command-line-utilities"]
+authors = ["Vladislavs Dovgalecs <vladislavs.dovgalecs@gmail.com>"]
+
+[dependencies]
+fugue-ppl = "0.2.2"
+rand = "0.8"
