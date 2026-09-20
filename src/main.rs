@@ -4,7 +4,7 @@
 //! comma-separated integers), runs MCMC, and writes posterior summaries
 //! to stdout.
 //!
-//! Model (port of the PyMC3 demo):
+//! Model:
 //!
 //! ```text
 //! N   ~ DiscreteUniform(max(y), 10_000)

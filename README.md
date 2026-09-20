@@ -6,8 +6,6 @@ Observed tank serial numbers are read from stdin; posterior summaries for the to
 
 ## Model
 
-Port of an earlier PyMC3 demo:
-
 ```text
 N   ~ DiscreteUniform(max(y), 10_000)
 λ   ~ HalfNormal(σ = 10)          # |Normal(0, 10)| in Fugue
@@ -65,8 +63,6 @@ This project is built on **[Fugue](https://fugue.run)** (`[fugue-ppl](https://cr
 - API docs: [docs.rs/fugue-ppl](https://docs.rs/fugue-ppl)
 
 Fugue is used here under its MIT license; see that project for copyright and license terms.
-
-The statistical model follows an earlier PyMC3 German tank demo.
 
 ## License
 
